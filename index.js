@@ -30,7 +30,8 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // Broadcast para todos os clientes conectados
+    parsedMessage.timestamp = new Date().toISOString()
+
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(parsedMessage));
