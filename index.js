@@ -1,27 +1,19 @@
-const WebSocket = require('ws');
-const os = require('os');
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors'); // Import CORS middleware
 
-const interfaces = os.networkInterfaces();
-let localIpAddress;
 
-Object.keys(interfaces).forEach((interfaceName) => {
-  interfaces[interfaceName].forEach((iface) => {
-    if (iface.family === 'IPv4' && !iface.internal) {
-      localIpAddress = iface.address;
-    }
-  });
-});
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-const wss = new WebSocket.Server({ port: 8080, host: '0.0.0.0' });
+app.use(cors());
 
-wss.on('listening', () => {
-  console.log(`WebSocket server running at ws://${localIpAddress}:8080`);
-});
-
-wss.on('connection', (ws) => {
+io.on('connection', (socket) => {
   console.log('Novo cliente conectado.');
 
-  ws.on('message', (message) => {
+  socket.on('message', (message) => {
     let parsedMessage;
     try {
       parsedMessage = JSON.parse(message);
@@ -30,20 +22,21 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    parsedMessage.timestamp = new Date().toISOString()
+    parsedMessage.timestamp = new Date().toISOString();
 
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(parsedMessage));
-      }
-    });
+    io.emit('message', JSON.stringify(parsedMessage));
   });
 
-  ws.on('close', () => {
+  socket.on('disconnect', () => {
     console.log('Cliente desconectado.');
   });
 
-  ws.on('error', (error) => {
-    console.error('Erro no WebSocket:', error);
+  socket.on('error', (error) => {
+    console.error('Erro no Socket.IO:', error);
   });
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server is listening on port ${PORT}`);
 });
