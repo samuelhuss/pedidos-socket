@@ -10,7 +10,7 @@ Object.keys(interfaces).forEach((interfaceName) => {
       localIpAddress = iface.address;
     }
   });
-});
+})
 
 const wss = new WebSocket.Server({ port: 8080, host: '0.0.0.0' });
 
